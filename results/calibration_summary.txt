@@ -1,0 +1,16 @@
+rows used: 413,994 (train trips only)
+
+== Fig 2a: speed vs voltage ==
+  Under 10  n=  92692  mean 37.75 V  median 37.45 V
+  10-20     n= 192114  mean 37.26 V  median 37.14 V
+  Over 20   n= 129188  mean 36.40 V  median 36.34 V
+  voltage drop at >=20 km/h vs <20 km/h : 2.72 %   (paper reports ~9.5 %)
+  same-charge-level drop (per capacity quintile): 3.39, 2.93, 2.82, 2.46, 2.50 %  (mean 2.82 %)
+
+== Fig 2b: dV spread by surface ==
+  Road    std(dV) = 0.391 V   var = 0.153
+  Type 1  std(dV) = 0.987 V   var = 0.975
+  Type 2  std(dV) = 0.964 V   var = 0.930
+  Type 3  std(dV) = 0.867 V   var = 0.752
+  sidewalk (all 13 types) std 0.910 V  vs road 0.391 V  -> ratio 2.33x
+  type index vs std(dV) correlation over types 1-13: -0.33 (paper: smaller/more segmented blocks -> larger variance; only claim it if this is clearly negative AND your generator maps small blocks to low type numbers)
