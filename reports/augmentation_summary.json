@@ -1,0 +1,47 @@
+[
+    {
+        "seq_len": 5,
+        "orig_train_N": 10336,
+        "aug_train_N": 41344,
+        "val_N": 1436,
+        "test_N": 2919,
+        "multiplier": 4.0,
+        "speeding_ratio_aug_train": 71.14938080495357
+    },
+    {
+        "seq_len": 10,
+        "orig_train_N": 10326,
+        "aug_train_N": 41304,
+        "val_N": 1431,
+        "test_N": 2914,
+        "multiplier": 4.0,
+        "speeding_ratio_aug_train": 69.43637420104591
+    },
+    {
+        "seq_len": 15,
+        "orig_train_N": 10316,
+        "aug_train_N": 41264,
+        "val_N": 1426,
+        "test_N": 2909,
+        "multiplier": 4.0,
+        "speeding_ratio_aug_train": 67.81698332687088
+    },
+    {
+        "seq_len": 20,
+        "orig_train_N": 10306,
+        "aug_train_N": 41224,
+        "val_N": 1421,
+        "test_N": 2904,
+        "multiplier": 4.0,
+        "speeding_ratio_aug_train": 66.23326217737241
+    },
+    {
+        "seq_len": 25,
+        "orig_train_N": 10296,
+        "aug_train_N": 41184,
+        "val_N": 1416,
+        "test_N": 2899,
+        "multiplier": 4.0,
+        "speeding_ratio_aug_train": 64.64646464646465
+    }
+]

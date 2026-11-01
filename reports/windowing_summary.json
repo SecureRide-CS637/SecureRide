@@ -1,0 +1,52 @@
+[
+    {
+        "seq_len": 5,
+        "file": "seq5.npz",
+        "N_windows": 14691,
+        "X_shape": "(14691, 5, 3)",
+        "y_shape": "(14691,)",
+        "speeding_windows": 10746,
+        "non_speeding_windows": 3945,
+        "speeding_ratio_pct": 73.14682458648151
+    },
+    {
+        "seq_len": 10,
+        "file": "seq10.npz",
+        "N_windows": 14671,
+        "X_shape": "(14671, 10, 3)",
+        "y_shape": "(14671,)",
+        "speeding_windows": 10477,
+        "non_speeding_windows": 4194,
+        "speeding_ratio_pct": 71.41299161611342
+    },
+    {
+        "seq_len": 15,
+        "file": "seq15.npz",
+        "N_windows": 14651,
+        "X_shape": "(14651, 15, 3)",
+        "y_shape": "(14651,)",
+        "speeding_windows": 10218,
+        "non_speeding_windows": 4433,
+        "speeding_ratio_pct": 69.74267968056787
+    },
+    {
+        "seq_len": 20,
+        "file": "seq20.npz",
+        "N_windows": 14631,
+        "X_shape": "(14631, 20, 3)",
+        "y_shape": "(14631,)",
+        "speeding_windows": 9963,
+        "non_speeding_windows": 4668,
+        "speeding_ratio_pct": 68.09514045519786
+    },
+    {
+        "seq_len": 25,
+        "file": "seq25.npz",
+        "N_windows": 14611,
+        "X_shape": "(14611, 25, 3)",
+        "y_shape": "(14611,)",
+        "speeding_windows": 9712,
+        "non_speeding_windows": 4899,
+        "speeding_ratio_pct": 66.47046745602628
+    }
+]

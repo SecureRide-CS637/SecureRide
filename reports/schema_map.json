@@ -1,0 +1,34 @@
+{
+    "13_09_2021_14_51_57.csv": {
+        "time": "Milliseconds since Epoch",
+        "speed": "Speed",
+        "current": "Ampere",
+        "soc": "Battery Percentage",
+        "voltage": "Battery Voltage",
+        "ride_id": "13_09_2021_14_51_57"
+    },
+    "13_09_2021_18_09_58.csv": {
+        "time": "Milliseconds since Epoch",
+        "speed": "Speed",
+        "current": "Ampere",
+        "soc": "Battery Percentage",
+        "voltage": "Battery Voltage",
+        "ride_id": "13_09_2021_18_09_58"
+    },
+    "29_12_2021_13_21_21.csv": {
+        "time": "Milliseconds since Epoch",
+        "speed": "Speed",
+        "current": "Ampere",
+        "soc": "Battery Percentage",
+        "voltage": "Battery Voltage",
+        "ride_id": "29_12_2021_13_21_21"
+    },
+    "29_12_2021_17_48_30.csv": {
+        "time": "Milliseconds since Epoch",
+        "speed": "Speed",
+        "current": "Ampere",
+        "soc": "Battery Percentage",
+        "voltage": "Battery Voltage",
+        "ride_id": "29_12_2021_17_48_30"
+    }
+}

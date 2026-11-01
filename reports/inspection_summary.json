@@ -1,0 +1,102 @@
+[
+    {
+        "file": "13_09_2021_14_51_57.csv",
+        "rows": 5243,
+        "time_span_seconds": 5242.0,
+        "sampling_dt_median": 1.0,
+        "sampling_dt_min": 1.0,
+        "sampling_dt_max": 1.0,
+        "voltage_range": [
+            34.88,
+            40.34
+        ],
+        "current_range": [
+            -8.88,
+            19.66
+        ],
+        "soc_range": [
+            67.0,
+            98.0
+        ],
+        "speed_range": [
+            -1.084,
+            29.563
+        ],
+        "speeding_ratio_pct": 71.79095937440397
+    },
+    {
+        "file": "13_09_2021_18_09_58.csv",
+        "rows": 5101,
+        "time_span_seconds": 5100.0,
+        "sampling_dt_median": 1.0,
+        "sampling_dt_min": 1.0,
+        "sampling_dt_max": 1.0,
+        "voltage_range": [
+            32.97,
+            37.58
+        ],
+        "current_range": [
+            -6.58,
+            19.7
+        ],
+        "soc_range": [
+            37.0,
+            72.0
+        ],
+        "speed_range": [
+            -2.35,
+            26.85
+        ],
+        "speeding_ratio_pct": 73.37776906488924
+    },
+    {
+        "file": "29_12_2021_13_21_21.csv",
+        "rows": 2923,
+        "time_span_seconds": 2922.0,
+        "sampling_dt_median": 1.0,
+        "sampling_dt_min": 1.0,
+        "sampling_dt_max": 1.0,
+        "voltage_range": [
+            35.66,
+            40.61
+        ],
+        "current_range": [
+            -8.06,
+            21.48
+        ],
+        "soc_range": [
+            78.0,
+            98.0
+        ],
+        "speed_range": [
+            -1.578,
+            25.968
+        ],
+        "speeding_ratio_pct": 83.30482381115293
+    },
+    {
+        "file": "29_12_2021_17_48_30.csv",
+        "rows": 1440,
+        "time_span_seconds": 1439.0,
+        "sampling_dt_median": 1.0,
+        "sampling_dt_min": 1.0,
+        "sampling_dt_max": 1.0,
+        "voltage_range": [
+            34.24,
+            38.3
+        ],
+        "current_range": [
+            -7.47,
+            19.71
+        ],
+        "soc_range": [
+            61.0,
+            77.0
+        ],
+        "speed_range": [
+            -2.049,
+            27.017
+        ],
+        "speeding_ratio_pct": 71.80555555555556
+    }
+]

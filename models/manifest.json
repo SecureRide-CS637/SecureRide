@@ -1,0 +1,62 @@
+{
+    "project": "SecureRide",
+    "description": "Dual-mode heterogeneous speeding detection models",
+    "paper_reference": "J. Kim et al., SecureRide, ACM TECS 2025",
+    "channel_order": [
+        "voltage",
+        "current",
+        "soc"
+    ],
+    "sampling_hz": 1.0,
+    "selection_criteria": {
+        "tau_time_budget_s": 6.0,
+        "alpha_target_acc": 0.98,
+        "hl_limits": {
+            "quick": 1,
+            "accurate": 3
+        },
+        "latency_note": "Detection latency = L * 1 s at 1 Hz sampling; the paper's 1.01 s requires higher-rate logging."
+    },
+    "quick": {
+        "name": "theta_quick",
+        "model_h5": "theta_quick.h5",
+        "model_tflite": "theta_quick.tflite",
+        "L_seq": 5,
+        "hl": 1,
+        "input_shape": [
+            1,
+            5,
+            3
+        ],
+        "parameters": 10762,
+        "tflite_size_kb": 28.375,
+        "val_acc": 0.9554317593574524,
+        "test_acc": 0.9568345546722412,
+        "precision": 0.9943231441048036,
+        "recall": 0.9527196652719664,
+        "balanced_acc": 0.9640724980424104,
+        "buffer_time_s": 5.0,
+        "exec_time_s": 0.01
+    },
+    "accurate": {
+        "name": "theta_accurate",
+        "model_h5": "theta_accurate.h5",
+        "model_tflite": "theta_accurate.tflite",
+        "L_seq": 20,
+        "hl": 3,
+        "input_shape": [
+            1,
+            20,
+            3
+        ],
+        "parameters": 30154,
+        "tflite_size_kb": 65.015625,
+        "val_acc": 0.9802955389022828,
+        "test_acc": 0.9703856706619264,
+        "precision": 0.9895454545454544,
+        "recall": 0.971875,
+        "balanced_acc": 0.9686182228915664,
+        "buffer_time_s": 20.0,
+        "exec_time_s": 0.4
+    }
+}

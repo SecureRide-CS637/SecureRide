@@ -1,0 +1,50 @@
+[
+    {
+        "ride_id": "13_09_2021_14_51_57",
+        "file": "ride_13_09_2021_14_51_57.npz",
+        "num_points": 5243,
+        "duration_sec": 5243.0,
+        "speed_mean": 19.042274270455845,
+        "speed_max": 29.563,
+        "voltage_mean": 37.769595651344645,
+        "current_mean": 5.368258630555026,
+        "soc_start": 98.0,
+        "soc_end": 70.0
+    },
+    {
+        "ride_id": "13_09_2021_18_09_58",
+        "file": "ride_13_09_2021_18_09_58.npz",
+        "num_points": 5101,
+        "duration_sec": 5101.0,
+        "speed_mean": 19.41736345814546,
+        "speed_max": 26.85,
+        "voltage_mean": 35.47168398353264,
+        "current_mean": 5.638078808076847,
+        "soc_start": 72.0,
+        "soc_end": 37.0
+    },
+    {
+        "ride_id": "29_12_2021_13_21_21",
+        "file": "ride_29_12_2021_13_21_21.npz",
+        "num_points": 2923,
+        "duration_sec": 2923.0,
+        "speed_mean": 21.984515908313377,
+        "speed_max": 25.968,
+        "voltage_mean": 38.19213479302087,
+        "current_mean": 5.309154977762573,
+        "soc_start": 98.0,
+        "soc_end": 78.0
+    },
+    {
+        "ride_id": "29_12_2021_17_48_30",
+        "file": "ride_29_12_2021_17_48_30.npz",
+        "num_points": 1440,
+        "duration_sec": 1440.0,
+        "speed_mean": 19.689526736111112,
+        "speed_max": 27.017,
+        "voltage_mean": 36.228833333333334,
+        "current_mean": 6.541479166666666,
+        "soc_start": 77.0,
+        "soc_end": 61.0
+    }
+]

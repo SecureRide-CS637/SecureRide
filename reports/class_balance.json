@@ -1,0 +1,151 @@
+{
+    "target_split": {
+        "train": 0.64,
+        "val": 0.16,
+        "test": 0.2
+    },
+    "ride_assignment": {
+        "train": [
+            "13_09_2021_14_51_57",
+            "13_09_2021_18_09_58"
+        ],
+        "val": [
+            "29_12_2021_17_48_30"
+        ],
+        "test": [
+            "29_12_2021_13_21_21"
+        ]
+    },
+    "datasets": {
+        "seq5": {
+            "seq_len": 5,
+            "total_samples": 14691,
+            "train": {
+                "count": 10336,
+                "frac": 0.7035600027227554,
+                "positives": 7354,
+                "negatives": 2982,
+                "pos_ratio": 0.7114938080495357
+            },
+            "val": {
+                "count": 1436,
+                "frac": 0.09774691988292152,
+                "positives": 1002,
+                "negatives": 434,
+                "pos_ratio": 0.6977715877437326
+            },
+            "test": {
+                "count": 2919,
+                "frac": 0.19869307739432304,
+                "positives": 2390,
+                "negatives": 529,
+                "pos_ratio": 0.8187735525865022
+            },
+            "resampling_recommendation": "none"
+        },
+        "seq10": {
+            "seq_len": 10,
+            "total_samples": 14671,
+            "train": {
+                "count": 10326,
+                "frac": 0.703837502556063,
+                "positives": 7170,
+                "negatives": 3156,
+                "pos_ratio": 0.694363742010459
+            },
+            "val": {
+                "count": 1431,
+                "frac": 0.09753936336991344,
+                "positives": 967,
+                "negatives": 464,
+                "pos_ratio": 0.6757512229210343
+            },
+            "test": {
+                "count": 2914,
+                "frac": 0.19862313407402357,
+                "positives": 2340,
+                "negatives": 574,
+                "pos_ratio": 0.8030199039121483
+            },
+            "resampling_recommendation": "none"
+        },
+        "seq15": {
+            "seq_len": 15,
+            "total_samples": 14651,
+            "train": {
+                "count": 10316,
+                "frac": 0.7041157600163811,
+                "positives": 6996,
+                "negatives": 3320,
+                "pos_ratio": 0.6781698332687088
+            },
+            "val": {
+                "count": 1426,
+                "frac": 0.09733124018838304,
+                "positives": 932,
+                "negatives": 494,
+                "pos_ratio": 0.6535764375876578
+            },
+            "test": {
+                "count": 2909,
+                "frac": 0.19855299979523583,
+                "positives": 2290,
+                "negatives": 619,
+                "pos_ratio": 0.7872121003781368
+            },
+            "resampling_recommendation": "none"
+        },
+        "seq20": {
+            "seq_len": 20,
+            "total_samples": 14631,
+            "train": {
+                "count": 10306,
+                "frac": 0.7043947782106487,
+                "positives": 6826,
+                "negatives": 3480,
+                "pos_ratio": 0.6623326217737241
+            },
+            "val": {
+                "count": 1421,
+                "frac": 0.09712254801448979,
+                "positives": 897,
+                "negatives": 524,
+                "pos_ratio": 0.6312456016889515
+            },
+            "test": {
+                "count": 2904,
+                "frac": 0.1984826737748616,
+                "positives": 2240,
+                "negatives": 664,
+                "pos_ratio": 0.7713498622589532
+            },
+            "resampling_recommendation": "none"
+        },
+        "seq25": {
+            "seq_len": 25,
+            "total_samples": 14611,
+            "train": {
+                "count": 10296,
+                "frac": 0.7046745602628157,
+                "positives": 6656,
+                "negatives": 3640,
+                "pos_ratio": 0.6464646464646465
+            },
+            "val": {
+                "count": 1416,
+                "frac": 0.09691328451166929,
+                "positives": 866,
+                "negatives": 550,
+                "pos_ratio": 0.6115819209039548
+            },
+            "test": {
+                "count": 2899,
+                "frac": 0.19841215522551503,
+                "positives": 2190,
+                "negatives": 709,
+                "pos_ratio": 0.7554329078992756
+            },
+            "resampling_recommendation": "none"
+        }
+    }
+}

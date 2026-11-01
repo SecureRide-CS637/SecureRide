@@ -1,0 +1,122 @@
+{
+  "quick": {
+    "acc": 0.9441589585474478,
+    "precision": 0.9960698689956332,
+    "recall": 0.9367556468172484,
+    "f1": 0.9655026455026455,
+    "tp": 2281,
+    "fp": 9,
+    "fn": 154,
+    "tn": 475,
+    "valid": 2919,
+    "steady": {
+      "steady_acc": 0.9564011097899326,
+      "steady_precision": 0.9985549132947977,
+      "steady_recall": 0.9509174311926606,
+      "steady_n": 2523,
+      "excluded": 400
+    },
+    "latency": [
+      3.0,
+      null,
+      0.0,
+      null,
+      3.0,
+      5.0,
+      4.0,
+      4.0,
+      4.0,
+      5.0,
+      5.0,
+      3.0
+    ],
+    "latency_summary": {
+      "median": 4.0,
+      "mean": 3.6,
+      "min": 0.0,
+      "max": 5.0,
+      "missed": 2,
+      "total_episodes": 12
+    }
+  },
+  "accurate": {
+    "acc": 0.9101239669421488,
+    "precision": 0.9940909090909091,
+    "recall": 0.8981519507186858,
+    "f1": 0.9436893203883494,
+    "tp": 2187,
+    "fp": 13,
+    "fn": 248,
+    "tn": 456,
+    "valid": 2904,
+    "steady": {
+      "steady_acc": 0.9740829346092504,
+      "steady_precision": 0.9976470588235294,
+      "steady_recall": 0.9724770642201835,
+      "steady_n": 2508,
+      "excluded": 415
+    },
+    "latency": [
+      18.0,
+      null,
+      21.0,
+      null,
+      19.0,
+      19.0,
+      18.0,
+      16.0,
+      18.0,
+      20.0,
+      17.0,
+      17.0
+    ],
+    "latency_summary": {
+      "median": 18.0,
+      "mean": 18.3,
+      "min": 16.0,
+      "max": 21.0,
+      "missed": 2,
+      "total_episodes": 12
+    }
+  },
+  "dual": {
+    "acc": 0.9407331277834875,
+    "precision": 0.993455497382199,
+    "recall": 0.9351129363449692,
+    "f1": 0.9634017347154642,
+    "tp": 2277,
+    "fp": 15,
+    "fn": 158,
+    "tn": 469,
+    "valid": 2919,
+    "steady": {
+      "steady_acc": 0.9805786761791518,
+      "steady_precision": 0.997200186654223,
+      "steady_recall": 0.9802752293577982,
+      "steady_n": 2523,
+      "excluded": 400
+    },
+    "latency": [
+      3.0,
+      null,
+      0.0,
+      null,
+      3.0,
+      5.0,
+      4.0,
+      4.0,
+      4.0,
+      5.0,
+      5.0,
+      3.0
+    ],
+    "latency_summary": {
+      "median": 4.0,
+      "mean": 3.6,
+      "min": 0.0,
+      "max": 5.0,
+      "missed": 2,
+      "total_episodes": 12
+    }
+  }
+}
