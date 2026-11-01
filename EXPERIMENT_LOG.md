@@ -1,137 +1,119 @@
-# SecureRide: Experiment Execution & Verification Log
+# SecureRide: Experiment and Repository Snapshot
 
-**Date:** October 28, 2026  
-**Research Paper:** *SecureRide: Detecting Safety-Threatening Behavior of E-Scooters Using Battery Information* (ACM TECS / ACM EMSOFT 2025)  
-**Host Environment:** Windows x86_64, Python 3.11.9, PyTorch 2.15.0+cpu, Scikit-Learn 1.9.1, NumPy 2.4.6, Pandas 3.1.0, Matplotlib 3.11.2  
+**Snapshot reviewed:** November 1, 2026
+**Scope:** Current top-level simulator, training, inference, and evaluation code. Metrics below are from local generated CSVs; they are not a fresh rerun of every experiment.
 
----
+## 1. Current implementation
 
-## 1. Project Audit Summary
+The active workflow in this repository is:
 
-1. **Simulator Speed-Bin Gap:**
-   - **Finding:** In `gen_dataset.py`, the target speed bin for legal riding was defined as `(15, 19)` km/h and the speeding bin was `(21.5, 24.5)` km/h, leaving an artificial 2.5 km/h gap (`19.0 - 21.5 km/h`).
-   - **Technical Explanation:** The simulator author introduced this deadband to prevent target speed flickering across the 20.0 km/h boundary during steady-state segments. However, dynamic speed transitions, deceleration, and Ornstein-Uhlenbeck jitter caused 44,732 rows (6.7% of the dataset) to traverse this boundary. In the original paper (Table 2), speed bins are continuous: 0–5, 5–10, 10–15, 15–20, 20–25 km/h.
-2. **Voltage Drop Discrepancy (2.72% vs ~9.5%):**
-   - **Finding:** `calibration_plots.py` reported a 2.72% voltage drop between $\ge 20$ km/h and $< 20$ km/h, while the paper reported ~9.5%.
-   - **Technical Explanation:** In the synthetic simulation, trip State-of-Charge (SoC) is uniformly distributed across all speeds ($mean\ SoC \approx 0.62$), isolating pure instantaneous ohmic and polarization drop ($I \cdot R$). In real empirical tests, higher speeds accelerate battery drain, and real packs exhibit higher total impedance (~0.30–0.40 $\Omega$ including BMS FETs, cell interconnects, and shunt resistors). When controlling for SoC by capacity quintiles, the simulated drop is 2.50%–3.39%. Following guidelines, no artificial data manipulation was performed.
-3. **Missing Artifacts:**
-   - Saved model checkpoints (`.pt`, `.joblib`) and sample prediction CLI were missing.
+```text
+gen_dataset.py
+    -> data/trips.csv, data/trips_meta.csv
+secureride_data.py build
+    -> data/secureride_windows.npz, data/norm_stats.json, data/window_counts.csv
+train.py
+    -> models/, results/metrics_*.csv, confusion matrices and plots
+dualmode.py / predict_sample.py
+    -> scenario evaluation / sample-file inference
+```
 
----
+`train.py` and `dualmode.py` support PyTorch, Keras, and scikit-learn backends; CNN and GRU architectures are available for the neural backends. `imbalance.py` evaluates alternate class prevalences, and `smoothing.py` evaluates causal majority-vote smoothing.
 
-## 2. Automated Test Suite Execution
+The current training flow reads `data/trips.csv` through `secureride_data.py`. The checked-in `data/raw/`, `data/processed/`, and `data/final/` directories are not inputs to these active scripts. Likewise, `models/theta_*.h5`, `models/theta_*.tflite`, and the manifest describe a separate 1 Hz / voltage-current-SoC model artifact; the top-level training flow uses 5 Hz windows with voltage-current-capacity channels. Do not mix their metrics or preprocessing.
 
-Command executed:
-```powershell
+Generated files under `results/` are ignored by Git, so the CSVs cited below may not be present in a fresh clone. Regenerate them with the commands in Section 6 before relying on them.
+
+## 2. Dataset and simulator checks
+
+- The current `data/trips.csv` contains **668,003 rows** across **760 trip IDs**.
+- The non-scenario split contains **460 train**, **116 validation**, and **144 test** trips. There are also 20 scenario trips per task.
+- Telemetry is simulated at **5 Hz**. Inputs are voltage, current, and capacity; speed and surface are used for targets/analysis, not as model input channels.
+- The prepared window labels use the all-points rule: a window is positive only if all of its timesteps are labeled illegal. Windows are balanced by task, length, and split; the imbalance experiment deliberately constructs other prevalences.
+- `gen_dataset.py` samples steady-state speed targets from `(1, 5)`, `(5, 10)`, `(10, 15)`, `(15, 19)`, and `(21.5, 24.5)` km/h. The resulting 19–21.5 km/h target gap is a simulator design choice. In the current trips file, **38,640 rows (5.78%)** have measured speeds strictly inside that interval.
+
+### Calibration results
+
+The local `results/calibration_summary.txt` records:
+
+- Voltage drop at speeds $\geq 20$ km/h versus below 20 km/h: **2.72%**; capacity-quintile-controlled drops: **2.50–3.39%** (mean **2.82%**).
+- Standard deviation of first-difference voltage: **0.391 V** on the simulated road and **0.910 V** across simulated sidewalk surfaces, a **2.33×** ratio.
+
+These are simulator outputs, not field measurements. The difference from paper-reported values has not been resolved into a single causal explanation.
+
+## 3. Recorded test-set model results
+
+Selected rows from the local `results/metrics_torch.csv`, `results/metrics_torch_gru.csv`, and `results/metrics_sklearn.csv` files:
+
+| Task | Model | Backend | L | HL | Test accuracy | Test F1 | Balanced accuracy | Inference ms | Size KB |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Speeding | CNN | PyTorch | 20 | 2 | 83.53% | 0.8357 | 0.8355 | 0.249 | 63.3 |
+| Sidewalk | CNN | PyTorch | 20 | 2 | 88.00% | 0.8764 | 0.8799 | 0.244 | 63.3 |
+| Speeding | GRU | PyTorch | 20 | 2 | 82.67% | 0.8263 | 0.8269 | 0.399 | 43.1 |
+| Sidewalk | GRU | PyTorch | 20 | 2 | 84.33% | 0.8273 | 0.8432 | 0.403 | 43.1 |
+| Speeding | HistGradientBoosting | sklearn | 20 | 1 | 86.51% | 0.8672 | 0.8650 | 0.929 | 98.7 |
+| Sidewalk | HistGradientBoosting | sklearn | 30 | 1 | 87.77% | 0.8715 | 0.8776 | 1.046 | 98.9 |
+
+These are selected configurations from one local artifact set, not universal model rankings. Inference times depend on the machine and measurement conditions; the CSVs do not document enough hardware detail for cross-platform timing comparisons.
+
+## 4. Recorded dual-mode results
+
+The local `results/dualmode_sidewalk_torch.csv` and `results/dualmode_speeding_torch.csv` each contain nine cases across $\tau \in \{1.0, 1.5, 2.0\}$ seconds and three validation-accuracy targets.
+
+| Task | Case | Alpha | Quick model | Accurate model | Quick correct / 500 | Accurate correct / 500 | Dual correct / 500 | Quick detect (s) | Accurate detect (s) | Dual detect (s) |
+|---|---:|---:|---|---|---:|---:|---:|---:|---:|---:|
+| Sidewalk | 1 | 0.835 | SL5/HL1 | SL10/HL1 | 380.9 | 426.2 | 441.8 | 1.120 | 1.540 | 0.570 |
+| Sidewalk | 2 | 0.875 | SL5/HL1 | SL20/HL1 | 380.9 | 440.2 | 465.3 | 1.120 | 3.090 | 0.570 |
+| Speeding | 1 | 0.823 | SL5/HL1 | SL10/HL2 | 454.4 | 460.7 | 455.8 | 0.495 | 2.221 | 0.495 |
+| Speeding | 2 | 0.846 | SL5/HL1 | SL20/HL2 | 454.4 | 455.6 | 443.1 | 0.495 | 4.090 | 0.516 |
+
+These configurations repeat across $\tau \in \{1.0,1.5,2.0\}$ seconds. The recorded sidewalk cases improve slot correctness over the listed fixed models, while the speeding dual-mode cases do not. This supports describing dual mode as an accuracy/latency tradeoff, not as a guaranteed accuracy improvement.
+
+## 5. Tests and sample inference
+
+The repository includes:
+
+- `test_secureride.py`: dataset, labeling, split isolation, augmentation, model serialization, sample-input validation, dual-mode transitions, and metric tests.
+- `test_contributions.py`: imbalance-weighting and temporal-smoothing tests.
+
+Run them with:
+
+```bash
 python -m unittest test_secureride.py
+python test_contributions.py
 ```
-**Result:** 12/12 tests PASSED (Ran in 12.10s)
-- `test_01_dataset_loading`: PASSED
-- `test_02_norm_stats`: PASSED
-- `test_03_feature_order_and_units`: PASSED
-- `test_04_window_labeling_rule`: PASSED
-- `test_05_split_isolation`: PASSED
-- `test_06_augmentation_consistency`: PASSED
-- `test_07_model_training_and_saving`: PASSED
-- `test_08_model_loading_and_inference`: PASSED
-- `test_09_sample_csv_prediction`: PASSED
-- `test_10_dualmode_state_transitions`: PASSED
-- `test_11_input_validation_errors`: PASSED
-- `test_12_metric_calculations`: PASSED
 
----
+The earlier experiment notes recorded 12 tests passing on a Windows/Python 3.11 environment. That historical result is not a guarantee for other dependency versions or hosts. The current dependency file gives minimum versions rather than a fully locked environment.
 
-## 3. Simulator Calibration & Figure 2 Replication
+The sample CSVs in the repository can be passed to `predict_sample.py`. The test suite checks their required columns and minimum length; prediction results should be recorded against the exact model/backend used.
 
-Command executed:
-```powershell
-python calibration_plots.py --root data --out results
-```
-**Key Numbers:**
-- Train rows evaluated: 413,994
-- Under 10 km/h: Mean 37.75 V, Median 37.45 V ($n=92,692$)
-- 10–20 km/h: Mean 37.26 V, Median 37.14 V ($n=192,114$)
-- Over 20 km/h: Mean 36.40 V, Median 36.34 V ($n=129,188$)
-- Voltage drop at $\ge 20$ km/h: 2.72% (SoC-controlled mean drop: 2.82%)
-- Road vibration std($\Delta V$): 0.391 V (variance 0.153)
-- Sidewalk vibration std($\Delta V$): 0.910 V (variance 0.828)
-- Sidewalk to Road vibration ratio: **2.33x** (Paper reports substantial increase on block pavement)
-- Artifacts: `fig2a_speed_voltage.png`, `fig2b_sidewalk_dv.png`, `fig2c_dv_all_types.png`, `calibration_summary.txt`
+## 6. Reproduction commands
 
----
+From the repository root:
 
-## 4. Model Training & Evaluation Sweeps
-
-### A. Scikit-Learn HistGradientBoosting Baseline
-Command executed:
-```powershell
-python train.py --backend sklearn --tasks speeding sidewalk --lengths 5 10 20 30 --hls 1 2 3 --max-train 15000 --max-eval 10000
-```
-- **Speeding:** Test Accuracy 79.43% (SL 5) $\rightarrow$ 81.91% (SL 10) $\rightarrow$ 86.51% (SL 20) $\rightarrow$ 86.50% (SL 30)
-- **Sidewalk:** Test Accuracy 77.34% (SL 5) $\rightarrow$ 83.26% (SL 10) $\rightarrow$ 86.37% (SL 20) $\rightarrow$ 87.77% (SL 30)
-- **Artifacts:** `results/metrics_sklearn.csv`, `results/fig5_accuracy_sklearn.png`
-
-### B. ResNet-based 1D CNN with Channel Attention (PyTorch)
-Command executed:
-```powershell
-python train.py --backend torch --arch cnn --tasks speeding sidewalk --lengths 5 10 20 --hls 1 2 --max-train 4000 --max-eval 3000 --epochs 15 --batch 256
-```
-- **Speeding:**
-  - SL 5, HL 1: Val 80.00%, Test 79.00%, F1 0.795, Latency 1.91 ms, Size 19.8 KB
-  - SL 10, HL 2: Val 83.70%, Test 81.27%, F1 0.818, Latency 4.19 ms, Size 63.3 KB
-  - SL 20, HL 2: Val 86.50%, Test 83.43%, F1 0.834, Latency 3.44 ms, Size 63.3 KB
-- **Sidewalk:**
-  - SL 5, HL 1: Val 79.50%, Test 78.80%, F1 0.767, Latency 2.11 ms, Size 19.8 KB
-  - SL 10, HL 2: Val 86.20%, Test 84.60%, F1 0.833, Latency 0.94 ms, Size 63.3 KB
-  - SL 20, HL 2: Val 91.00%, Test **87.83%**, F1 0.874, Latency 0.96 ms, Size 63.3 KB
-- **Artifacts:** `results/metrics_torch.csv`, `results/fig5_accuracy_torch.png`, `results/fig_training_curves_torch.png`
-
-### C. GRU Baseline (PyTorch)
-Command executed:
-```powershell
-python train.py --backend torch --arch gru --tasks speeding sidewalk --lengths 5 10 20 --hls 1 2 --max-train 4000 --max-eval 3000 --epochs 15 --batch 256
-```
-- **Speeding:** SL 5: 78.40% $\rightarrow$ SL 10: 79.43% $\rightarrow$ SL 20: 82.67%
-- **Sidewalk:** SL 5: 76.07% $\rightarrow$ SL 10: 79.83% $\rightarrow$ SL 20: 84.33%
-- **Observation:** CNN consistently outperforms GRU across all window lengths (+2.0% to +3.5% higher accuracy), while offering superior temporal feature extraction and smaller model footprint.
-- **Artifacts:** `results/metrics_torch_gru.csv`, `results/fig5_accuracy_torch_gru.png`, `results/fig_training_curves_torch_gru.png`
-
----
-
-## 5. Quick / Accurate Dual-Mode Detector (Algorithm 1)
-
-Commands executed:
-```powershell
+```bash
+python gen_dataset.py
+python secureride_data.py build --root data
+python train.py --backend sklearn --tasks speeding sidewalk \
+  --lengths 5 10 20 30 --hls 1 2 3 \
+  --max-train 15000 --max-eval 10000
+python train.py --backend torch --arch cnn --tasks speeding sidewalk \
+  --lengths 5 10 20 --hls 1 2 \
+  --max-train 4000 --max-eval 3000 --epochs 15 --batch 256
+python train.py --backend torch --arch gru --tasks speeding sidewalk \
+  --lengths 5 10 20 --hls 1 2 \
+  --max-train 4000 --max-eval 3000 --epochs 15 --batch 256
 python dualmode.py --task sidewalk --backend torch
-python dualmode.py --task speeding --backend torch
-python dualmode.py --task sidewalk --backend sklearn
-python dualmode.py --task speeding --backend sklearn
+python -m unittest test_secureride.py
+python test_contributions.py
 ```
-**Sidewalk Riding (PyTorch CNN):**
-- **Quick Model (SL 5 / HL 1):** Correct slots: 381.9 / 500 | Detection time: **1.12 s**
-- **Accurate Model (SL 20 / HL 2):** Correct slots: 449.9 / 500 | Detection time: 2.70 s
-- **Dual-Mode System:** Correct slots: **469.2 / 500 (93.8%)** | Detection time: **0.57 s**
-- **Conclusion:** Dual-Mode successfully combines the rapid response of Quick mode with the high sustained accuracy of Accurate mode.
 
-**Speeding Violation (PyTorch CNN):**
-- **Quick Model (SL 5 / HL 1):** Correct slots: 454.4 / 500 | Detection time: 0.50 s
-- **Accurate Model (SL 10 / HL 1):** Correct slots: 462.9 / 500 | Detection time: 1.39 s
-- **Dual-Mode System:** Correct slots: 456.2 / 500 | Detection time: **0.50 s**
-- **Artifacts:** `results/dualmode_sidewalk_torch.csv`, `results/dualmode_speeding_torch.csv`, `results/fig9_dualmode_sidewalk_torch.png`, `results/fig9_dualmode_speeding_torch.png`
+To run the scikit-learn imbalance experiment or smoothing sweep, see `imbalance.py --help` and `smoothing.py --help`. Record backend, seed, model configuration, and output filenames with any new result because training and timing outputs can vary by run and host.
 
----
+## 7. Limitations
 
-## 6. Sample CSV Prediction Verification
-
-Commands executed:
-```powershell
-python predict_sample.py --input sample_speeding_illegal.csv --task speeding --model models/speeding_L10_HL2.pt
-python predict_sample.py --input sample_speeding_legal.csv --task speeding --model models/speeding_L10_HL2.pt
-python predict_sample.py --input sample_sidewalk_illegal.csv --task sidewalk --model models/sidewalk_L10_HL2.pt
-python predict_sample.py --input sample_sidewalk_legal.csv --task sidewalk --model models/sidewalk_L10_HL2.pt
-```
-**Results:**
-- `sample_speeding_illegal.csv` $\rightarrow$ **SPEEDING VIOLATION** (100.0% illegal windows, 95.4% mean violation confidence).
-- `sample_speeding_legal.csv` $\rightarrow$ **LEGAL DRIVING** (30.3% illegal windows, 37.2% mean violation confidence).
-- `sample_sidewalk_illegal.csv` $\rightarrow$ **SIDEWALK RIDING** (59.1% illegal windows, 57.8% mean violation confidence).
-- `sample_sidewalk_legal.csv` $\rightarrow$ **LEGAL DRIVING** (0.0% illegal windows, 18.8% mean violation confidence).
+1. The generated telemetry and scenario labels are synthetic. The repository does not validate detection on independent real scooter rides.
+2. The simulator's speed-target gap differs from the paper's continuous speed bins.
+3. Accuracy, calibration, and dual-mode scores depend on simulator parameters, trip splits, and model configuration.
+4. Local inference timing is not an embedded-device benchmark.
+5. Battery measurements are not demonstrated to be tamper-proof; resistance to sensor spoofing or manipulation is outside the evaluated scope.

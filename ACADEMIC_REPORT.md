@@ -3,8 +3,9 @@
 **Academic Research Project Report & Independent Simulation-Based Re-Implementation**  
 **Based on:** *SecureRide: Detecting Safety-Threatening Behavior of E-Scooters Using Battery Information*, ACM Transactions on Embedded Computing Systems (ACM TECS / ACM EMSOFT 2025).  
 **Author / Reproducer:** Academic Re-Implementation & Evaluation Team  
-**Evaluation Date:** October 28, 2026  
-**Status:** Implemented simulation-based pipeline with class-imbalance and temporal-smoothing experiments; results should be reported from the corresponding CSV files for the exact run being discussed.  
+**Repository snapshot reviewed:** November 1, 2026
+
+**Status:** Simulation-based research implementation. Results below describe recorded local experiment artifacts and are not evidence of field validation.
 
 ---
 
@@ -12,9 +13,9 @@
 
 Electric scooters (e-scooters) have emerged as a dominant micro-mobility solution in modern urban transportation. However, reckless riding behaviors—most notably **speeding violations** exceeding statutory limits (typically 20 km/h) and **illegal sidewalk riding**—present severe hazards to pedestrians and riders alike. Traditional sensing systems relying on GPS and Inertial Measurement Units (IMUs) suffer from GPS multipath reflection/occlusion in urban street canyons and vulnerability to physical/software sensor spoofing. 
 
-To overcome these vulnerabilities, the SecureRide architecture proposes using internal battery telemetry—specifically **terminal voltage**, **discharge/regeneration current**, and **estimated remaining capacity**—as an unforgeable physical side-channel for behavior classification. This report presents a comprehensive academic re-implementation and simulation-based evaluation of the SecureRide system. We investigate the physics-inspired battery simulator, rectify simulator configurations including an artificial speed-bin gap, implement a 1D ResNet with Channel Attention (Squeeze-and-Excitation) alongside a stacked GRU baseline and a gradient-boosted ensemble in PyTorch and Scikit-Learn, evaluate a streaming Quick/Accurate Dual-Mode state machine (Algorithm 1), and build a complete end-to-end inference and testing pipeline. 
+To explore whether internal battery telemetry—**terminal voltage**, **current**, and **remaining capacity**—can help classify riding behavior, this project implements a physics-inspired simulator, windowed-data preparation, CNN/GRU and scikit-learn models, a Quick/Accurate state machine, sample inference, and tests. The measurements are simulated; the implementation does not establish that battery telemetry is unforgeable or validate the system on real scooters.
 
-Our empirical results on held-out simulation test sets demonstrate that the 1D ResNet CNN achieves **87.83% test accuracy** for sidewalk detection and **83.43% test accuracy** for speeding violation detection. The dual-mode detector demonstrates superior performance, identifying illegal sidewalk riding in **0.57 seconds** with **93.8% correct slot accuracy**, surpassing standalone Quick (1.12s, 76.4%) and Accurate (2.70s, 90.0%) baselines.
+In the recorded PyTorch CNN run, the best listed test accuracy is **88.00%** for sidewalk classification (L=20, HL=2) and **83.53%** for speeding (L=20, HL=2). In the recorded dual-mode sidewalk case with tau=1.0 s and alpha=0.875, the system scored **465.3/500 slots** with **0.57 s** detection time; these scenario results are simulator-specific and do not show a consistent dual-mode gain for every task or configuration. Metrics and configurations are summarized in Section 13 and the local CSV outputs.
 
 ---
 
@@ -28,7 +29,7 @@ Enforcing these regulations autonomously via onboard telematics is notoriously d
 - **GPS Degradation:** Standard low-power GPS modules installed on commercial e-scooters suffer from positioning errors of 5 to 15 meters in urban areas. This spatial uncertainty exceeds the typical 2-meter physical separation between a street and an adjacent pedestrian sidewalk, causing unacceptable misclassification rates.
 - **Sensor Vulnerability and Tampering:** IMU accelerometers and wheel tachometers can be easily spoofed or disconnected by malicious users seeking to override speed governors.
 
-SecureRide introduces a novel insight: the battery management system (BMS) cannot be bypassed because it directly powers the traction motor. The electrical energy delivered by the battery is intrinsically governed by Newton's laws of motion, aerodynamic drag, rolling resistance, and high-frequency surface vibration caused by paving block segmentation. By monitoring battery terminal voltage, current, and capacity, an e-scooter can self-detect illegal behaviors without relying on external satellite signals or hackable external sensors.
+SecureRide explores whether battery measurements can provide signals associated with vehicle speed and road surface, complementing external sensing. Battery telemetry is not inherently tamper-proof, and this simulation does not assess resistance to sensor manipulation or demonstrate reliable real-world detection.
 
 ---
 
@@ -38,7 +39,9 @@ Given a discrete-time sequence of non-invasive battery measurements sampled at f
 $$\mathbf{X}_{t-L+1:t} = \left[ (\mathbf{v}_\tau, \mathbf{i}_\tau, \mathbf{c}_\tau) \right]_{\tau=t-L+1}^{t} \in \mathbb{R}^{L \times 3}$$
 where $\mathbf{v}_\tau$ is terminal voltage in Volts (V), $\mathbf{i}_\tau$ is current in Amperes (A), $\mathbf{c}_\tau$ is remaining capacity in milliampere-hours (mAh), and $L$ is the window sequence length ($L \in \{5, 7, 10, 15, 20, 25, 30\}$), determine two binary behavioral classifications:
 1. **Speeding Violation:** $y_{\text{speed}} \in \{0, 1\}$, indicating whether the true vehicle speed exceeded 20 km/h across the window.
-2. **Sidewalk Riding:** $y_{\text{sidewalk}} \in \{0, 1\}$, indicating whether the scooter traversed pedestrian paving blocks rather than an asphalt bicycle road.
+2. **Sidewalk Riding:** $y_{\text{sidewalk}} \in \{0, 1\}$, indicating whether the scooter traversed a simulated sidewalk surface rather than the simulated road surface.
+
+The prepared window label is positive only when **every** timestep in that window is labeled illegal. The dataset, labels, and evaluation scenarios are generated by the simulator; this is not a real-ride dataset.
 
 The detection must satisfy two conflicting operational criteria:
 - **Low Detection Latency:** Immediate alerting before an accident occurs ($\tau_{\text{det}} \le 1.0 - 2.0\ \text{s}$).
@@ -49,12 +52,12 @@ The detection must satisfy two conflicting operational criteria:
 ## 4. Research Objectives
 
 The objectives of this project are:
-1. **Simulator Audit & Calibration:** Analyze the physics-based synthetic e-scooter telemetry generator, investigate the speed-bin gap and voltage-drop discrepancies against the paper's reported values, and calibrate simulator outputs.
+1. **Simulator Audit & Calibration:** Analyze the physics-based synthetic e-scooter telemetry generator and compare its speed-bin and voltage outputs with the paper's reported values.
 2. **Model Implementation:** Build and train:
    - 1D ResNet CNN with Channel Attention (Squeeze-and-Excitation) and residual blocks.
    - Stacked GRU recurrent baseline.
-   - Hand-crafted feature gradient-boosted ensemble (`HistGradientBoostingClassifier`).
-3. **Rigorous Evaluation Pipeline:** Compute accuracy, precision, recall, F1-score, balanced accuracy, confusion matrices, parameter counts, memory footprint, and inference latency.
+   - A hand-crafted-feature `HistGradientBoostingClassifier` baseline.
+3. **Rigorous Evaluation Pipeline:** Compute accuracy, precision, recall, F1-score, balanced accuracy, confusion matrices, parameter counts, checkpoint size, and inference latency.
 4. **Quick/Accurate Dual-Mode Realization:** Implement the streaming state machine (Algorithm 1) and validate its detection time and slot accuracy on 100-second scenario trips.
 5. **Sample-Data Inference & Verification:** Develop a CLI prediction tool with schema and unit validation for real-world or simulated sample traces.
 6. **Reproducibility & Packaging:** Provide fully automated unit tests, clean code, dependencies, and execution scripts.
@@ -84,48 +87,41 @@ Consequently, the variance of the first difference of voltage $\Delta V = V(t+1)
 
 ## 6. System Architecture
 
-The SecureRide system consists of five distinct pipeline stages:
+The active implementation is an offline simulation and evaluation workflow, not an installed scooter telemetry service:
 
 ```mermaid
 flowchart LR
-    A["BMS Sensors (5 Hz)<br/>Voltage, Current, Capacity"] --> B["Window Buffer<br/>L = 5 .. 30"]
-    B --> C["Data Preprocessing<br/>Z-Score Normalization"]
-    C --> D{"Dual-Mode State Machine"}
-    D -- "Default Mode" --> E["Quick Model<br/>(L_short, HL 1)"]
-    D -- "Violation Detected" --> F["Accurate Model<br/>(L_long, HL 2)"]
-    E --> G["Provisional Verdict"]
-    F --> H["Final Confirmation"]
+    A["gen_dataset.py<br/>Synthetic 5 Hz trips"] --> B["data/trips.csv"]
+    B --> C["secureride_data.py build<br/>Balanced windows + train-only normalization"]
+    C --> D["train.py<br/>CNN / GRU / sklearn"]
+    D --> E["models/ + results/"]
+    E --> F["dualmode.py / predict_sample.py"]
 ```
 
-1. **Telemetry Ingestion:** 5 Hz telemetry of voltage, current, and capacity.
-2. **Window Framing:** Sliding temporal windows of length $L \in \{5, 10, 20, 30\}$ slots.
-3. **Z-Score Normalization:** Scaled using statistics derived strictly from training trips.
-4. **Inference Engine:** Heterogeneous Deep Neural Networks executing on embedded or gateway hardware.
-5. **Dual-Mode Arbitrator:** Streaming state machine switching between quick response and sustained confirmation.
+1. **Synthetic data:** `gen_dataset.py` writes simulated trips and labels.
+2. **Window preparation:** `secureride_data.py build` creates sliding windows for lengths 5, 7, 10, 15, 20, 25, and 30, with trip-level splits and training-only normalization statistics.
+3. **Model evaluation:** `train.py` supports PyTorch, Keras, and scikit-learn backends; CNN and GRU architectures are available for the neural backends.
+4. **Evaluation and inference:** `dualmode.py`, `predict_sample.py`, and the test modules exercise the offline models and state machine. Embedded deployment is not implemented or validated here.
 
 ---
 
 ## 7. Dataset and Synthetic Simulator Analysis
 
 ### 7.1 Dataset Scope and Group Splitting
-Because the original proprietary dataset gathered in Uppsala and Seoul was unavailable, this research utilizes a synthetic dataset generated via a physics-based simulator. The dataset comprises:
-- **Total Timesteps:** 668,003 samples across 36 hours of simulated driving.
-- **Trip-Level Split:** 64% training, 16% validation, 20% testing. Splits are partitioned by whole `trip_id` to strictly prevent temporal leakage across overlapping windows.
+The active training workflow uses synthetic telemetry from `gen_dataset.py`; it does not train on the checked-in `data/raw/`, `data/processed/`, or `data/final/` artifacts. The current `data/trips.csv` contains 668,003 rows across 760 trip IDs, including 20 scenario trips per task. The non-scenario split contains 460 training, 116 validation, and 144 test trips. Split membership is assigned by whole trip, preventing overlapping windows from crossing train/validation/test boundaries.
 
 ### 7.2 Investigation of Simulator Findings
 
 #### Speed-Bin Gap
 In `gen_dataset.py`, line 49 defined speed sampling intervals as:
 $$\text{BINS} = [(1.0, 5), (5, 10), (10, 15), (15, 19), (21.5, 24.5)]$$
-This created an artificial deadband between 19.0 km/h and 21.5 km/h where no steady-state target speeds were assigned. Our audit revealed that this deadband was introduced to prevent target speed oscillations near the 20.0 km/h legal boundary. However, during acceleration, deceleration, and Ornstein-Uhlenbeck rider jitter, the simulated vehicle traversed this interval (44,732 samples, 6.7% of all data). In the paper (Table 2), speed distributions are continuous: 0–5 (3.10%), 5–10 (15.98%), 10–15 (23.66%), 15–20 (20.60%), 20–25 km/h (36.66%).
+This creates a deadband between 19.0 km/h and 21.5 km/h for sampled segment targets; it does not prevent the simulated vehicle from passing through that interval during transitions. In the current `data/trips.csv`, 38,640 rows (5.78%) have speeds strictly between 19.0 and 21.5 km/h. The paper's reported speed bins are continuous: 0–5 (3.10%), 5–10 (15.98%), 10–15 (23.66%), 15–20 (20.60%), and 20–25 km/h (36.66%). The simulator's speed-bin choice is therefore a modeling difference, not a correction made in this repository.
 
 #### Voltage Drop Mismatch
-In `calibration_plots.py`, the simulated voltage drop at $\ge 20$ km/h versus $< 20$ km/h was **2.72%**, whereas the paper reported **~9.5%**. 
-Our physical investigation reveals the exact reason:
-In the simulation, every trip initializes SoC uniformly across $[0.25, 1.0]$. As a result, mean SoC is identical across all speed bins ($mean\ \text{SoC} \approx 0.62$). The simulated 2.72% drop therefore reflects the *pure instantaneous ohmic and polarization drop* ($I \cdot R$). In empirical field tests reported in the paper, high-speed trials rapidly depleted battery SoC and suffered from higher real-world pack impedance (~0.30–0.40 $\Omega$ with BMS protection circuitry and wiring). When controlling for charge level in the simulation (capacity quintiles), the drop is **2.50% to 3.39%**. Following the research guidelines, we preserve scientific integrity and do not manipulate the data artificially to match the 9.5% figure.
+In the recorded `calibration_summary.txt`, the simulated voltage drop at $\ge 20$ km/h versus $< 20$ km/h is **2.72%**, whereas the paper reported **~9.5%**. Controlling by capacity quintile yields drops from **2.50% to 3.39%** (mean **2.82%**). These are simulator measurements; the available output does not establish a single cause for the difference from the paper or support attributing it solely to instantaneous ohmic drop. No parameters were tuned to force agreement with the paper.
 
 #### Sidewalk Voltage Spread
-Evaluating $\Delta V = V(t+1) - V(t)$ confirmed the paper's core hypothesis:
+Evaluating $\Delta V = V(t+1) - V(t)$ in the simulator produced:
 - Road $std(\Delta V)$: **0.391 V**
 - Sidewalk (all 13 types) $std(\Delta V)$: **0.910 V**
 - **Ratio:** **2.33x** greater jitter variance on sidewalks, corroborating Fig. 2(b) of the paper.
@@ -134,14 +130,14 @@ Evaluating $\Delta V = V(t+1) - V(t)$ confirmed the paper's core hypothesis:
 
 ## 8. Feature Engineering and Preprocessing
 
-1. **Raw Channels:** $V$ (Volts), $I$ (Amperes), $C$ (mAh). Speed and surface ground-truth labels are never provided as model inputs.
+1. **Raw Channels:** $V$ (Volts), $I$ (Amperes), $C$ (mAh). Speed, surface, and labels are metadata/targets, not model input channels.
 2. **Labeling Rule (Equation 2):** A window of length $L$ is labeled illegal ($y=1$) if and only if **all** $L$ constituent timesteps are illegal:
    $$y = \prod_{k=0}^{L-1} y_{\text{step}}(t - k)$$
-3. **Class Balancing:** Balanced 50/50 per sequence length and split.
+3. **Class Balancing:** `secureride_data.py` downsamples each task/length/split to equal positive and negative window counts. `imbalance.py` provides a separate experiment that constructs requested prevalences.
 4. **Data Augmentation (Equation 3):** Applied exclusively to the training split:
-   - **Gaussian Noise:** White noise added to $V, I, C$.
-   - **Spike Noise:** Simulates bumps and throttle pulses. When $dI$ is injected, voltage is adjusted physically: $dV = -R \cdot dI$ ($R \in [0.1, 0.3]\ \Omega$).
-   - **Step / Slope:** Simulates entering inclines or steady throttle ramps, maintaining $dV = -R \cdot dI$.
+   - **Gaussian Noise:** Independent white noise added to $V, I, C$.
+   - **Spike Noise:** Simulates bumps and throttle pulses. Injected current changes are paired with $dV = -R \cdot dI$ ($R \in [0.1, 0.3]\ \Omega$).
+   - **Step / Slope:** Simulates persistent load changes or ramps, also pairing current changes with $dV = -R \cdot dI$.
    This quadruples the training set size ($4\times$) while enforcing physical battery laws.
 
 ---
@@ -160,7 +156,7 @@ Evaluating $\Delta V = V(t+1) - V(t)$ confirmed the paper's core hypothesis:
 - Linear(32, 2) classification head on final hidden state.
 
 ### 9.3 Scikit-Learn Gradient-Boosted Baseline
-- Hand-crafted 18-dimensional feature vector per window: mean, std, min, max, delta for $V, I, C$, plus first-difference statistics ($\Delta V, \Delta I$) and sign-change rates.
+- An 18-dimensional hand-crafted feature vector per window, derived from channel summaries, first-difference statistics, and voltage-difference sign changes.
 - `HistGradientBoostingClassifier` with tree depth and iterations scaled by HL.
 
 ---
@@ -170,7 +166,7 @@ Evaluating $\Delta V = V(t+1) - V(t)$ confirmed the paper's core hypothesis:
 The dual-mode detector resolves the trade-off between detection latency and sustained accuracy:
 1. **Quick Mode ($\theta_{\text{quick}}$):** Short sequence length ($L_{\text{short}} = 5$, HL 1). Constrained by $\tau$:
    $$L_{\text{short}} \cdot 0.2\ \text{s} + T_{\text{exec}} \le \tau$$
-2. **Accurate Mode ($\theta_{\text{accurate}}$):** Longer sequence length ($L_{\text{long}} \ge 10$, HL 2). Selected to achieve validation accuracy $\ge \alpha$.
+2. **Accurate Mode ($\theta_{\text{accurate}}$):** Longer sequence length ($L_{\text{long}} \ge 10$), selected from validation accuracy subject to the configured hidden-layer limit and target $\alpha$.
 3. **State Machine Operation:**
    - Starts in Quick mode.
    - Upon detecting an illegal behavior, outputs 1 immediately and transitions to Accurate mode.
@@ -181,11 +177,11 @@ The dual-mode detector resolves the trade-off between detection latency and sust
 
 ## 11. Experimental Setup
 
-- **Host System:** Windows 11, Intel CPU.
-- **Frameworks:** Python 3.11.9, PyTorch 2.15.0+cpu, Scikit-learn 1.9.1.
+- **Environment:** The repository does not pin an exact runtime environment. `requirements.txt` specifies minimum versions; the recorded run environment in `EXPERIMENT_LOG.md` is historical and should not be assumed to match another machine.
+- **Backends:** PyTorch, Keras (optional TensorFlow installation), and scikit-learn.
 - **Window Lengths Evaluated:** $L \in \{5, 10, 20, 30\}$.
 - **Hidden Layers:** $\text{HL} \in \{1, 2, 3\}$.
-- **Scenario Trips:** 100-second continuous evaluation scenarios (500 slots at 5 Hz), with illegal behaviors active between $t=20\ \text{s}$ and $t=80\ \text{s}$ (slots 100 to 400).
+- **Scenario Trips:** 100-second, 500-slot simulator scenarios at 5 Hz, with the generated violation segment configured for the dual-mode evaluation.
 
 ---
 
@@ -203,60 +199,39 @@ For each model and task, we measure:
 
 ## 13. Experimental Results
 
-### 13.1 Model Accuracy & Performance Summary (Test Set)
+### 13.1 Recorded Model Results (Test Set)
+
+The following rows summarize the current local `results/metrics_*.csv` artifacts. Test accuracy is not necessarily the model-selection criterion; dual-mode model selection uses validation accuracy. Latency and checkpoint size are machine- and run-dependent.
 
 | Task | Architecture | Backend | SL ($L$) | HL | Test Acc (%) | Test F1 | Test Bal. Acc (%) | Latency (ms) | Checkpoint Size (KB) |
-|---|---|---|---|---|---|---|---|---|---|
-| **Speeding** | ResNet-1D CNN | PyTorch | 5 | 1 | 79.00% | 0.7948 | 79.00% | 1.91 ms | 19.8 KB |
-| **Speeding** | ResNet-1D CNN | PyTorch | 10 | 2 | 81.27% | 0.8180 | 81.27% | 4.19 ms | 63.3 KB |
-| **Speeding** | ResNet-1D CNN | PyTorch | 20 | 2 | **83.43%** | 0.8343 | 83.43% | 3.44 ms | 63.3 KB |
-| **Speeding** | Stacked GRU | PyTorch | 5 | 1 | 78.40% | 0.7899 | 78.40% | 0.26 ms | 17.3 KB |
-| **Speeding** | Stacked GRU | PyTorch | 10 | 2 | 79.43% | 0.7922 | 79.43% | 2.42 ms | 43.1 KB |
-| **Speeding** | Stacked GRU | PyTorch | 20 | 2 | 82.67% | 0.8263 | 82.67% | 4.63 ms | 43.1 KB |
-| **Speeding** | HistGradBoost | Sklearn | 10 | 2 | 82.38% | 0.8230 | 82.38% | 5.37 ms | 526.5 KB |
-| **Sidewalk** | ResNet-1D CNN | PyTorch | 5 | 1 | 78.80% | 0.7665 | 78.80% | 2.11 ms | 19.8 KB |
-| **Sidewalk** | ResNet-1D CNN | PyTorch | 10 | 2 | 84.60% | 0.8333 | 84.60% | 0.94 ms | 63.3 KB |
-| **Sidewalk** | ResNet-1D CNN | PyTorch | 20 | 2 | **87.83%** | 0.8742 | 87.83% | 0.96 ms | 63.3 KB |
-| **Sidewalk** | Stacked GRU | PyTorch | 5 | 1 | 76.40% | 0.7403 | 76.40% | 0.27 ms | 17.3 KB |
-| **Sidewalk** | Stacked GRU | PyTorch | 10 | 2 | 79.83% | 0.7612 | 79.83% | 0.90 ms | 43.1 KB |
-| **Sidewalk** | Stacked GRU | PyTorch | 20 | 2 | 84.33% | 0.8273 | 84.33% | 1.61 ms | 43.1 KB |
-| **Sidewalk** | HistGradBoost | Sklearn | 10 | 2 | 81.45% | 0.8030 | 81.45% | 5.08 ms | 535.1 KB |
-| **Sidewalk** | HistGradBoost | Sklearn | 30 | 1 | 87.77% | 0.8715 | 87.77% | 2.44 ms | 98.9 KB |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Speeding | ResNet-1D CNN | PyTorch | 20 | 2 | 83.53 | 0.8357 | 0.8355 | 0.249 | 63.3 |
+| Sidewalk | ResNet-1D CNN | PyTorch | 20 | 2 | 88.00 | 0.8764 | 0.8799 | 0.244 | 63.3 |
+| Speeding | Stacked GRU | PyTorch | 20 | 2 | 82.67 | 0.8263 | 0.8269 | 0.399 | 43.1 |
+| Sidewalk | Stacked GRU | PyTorch | 20 | 2 | 84.33 | 0.8273 | 0.8432 | 0.403 | 43.1 |
+| Speeding | HistGradientBoosting | sklearn | 20 | 1 | 86.51 | 0.8672 | 0.8650 | 0.929 | 98.7 |
+| Sidewalk | HistGradientBoosting | sklearn | 30 | 1 | 87.77 | 0.8715 | 0.8776 | 1.046 | 98.9 |
 
-*Complete records for all 52 experimental combinations are preserved in `results/metrics_torch.csv`, `results/metrics_torch_gru.csv`, and `results/metrics_sklearn.csv`.*
+These are selected best-accuracy rows from the recorded files, not a claim that one architecture is universally best. The CSVs contain 12 CNN, 12 GRU, and 24 sklearn configurations in this workspace. The generated `results/` outputs are ignored by Git and may not be present in a fresh checkout; rerun `train.py` to regenerate them.
 
-### 13.2 Normalized Confusion Matrix (Sidewalk Riding, ResNet CNN, HL 2)
+### 13.2 Confusion Matrices
 
-| Ground Truth | Predicted Legal (SL 5) | Predicted Illegal (SL 5) | Predicted Legal (SL 10) | Predicted Illegal (SL 10) | Predicted Legal (SL 20) | Predicted Illegal (SL 20) |
-|---|---|---|---|---|---|---|
-| **Actual Legal ($y=0$)** | **0.428** | 0.072 | **0.442** | 0.058 | **0.456** | 0.044 |
-| **Actual Illegal ($y=1$)** | 0.140 | **0.360** | 0.096 | **0.404** | 0.078 | **0.422** |
+The current training script writes raw test confusion matrices under `results/confusion_matrices/`, one CSV per task, backend, sequence length, and hidden-layer configuration. Use those matrices for a configuration-specific analysis; the previously reported normalized values are not retained here because they do not match the current CSV metrics.
 
-As sequence length increases from SL 5 to SL 20, false negatives drop from 14.0% to 7.8%, and false positives drop from 7.2% to 4.4%, validating the paper's Table 3 observations.
+### 13.3 Dual-Mode Evaluation
 
-### 13.3 Dual-Mode Evaluation (Sidewalk Riding, ResNet CNN)
+The local CSV outputs record nine cases for each task across $\tau \in \{1.0, 1.5, 2.0\}$ s and three validation-accuracy targets. The selected model pair is constant across the three tau values in each configuration group.
 
-9 standard cases evaluated across $\tau \in \{1.0, 1.5, 2.0\}\ \text{s}$ and target accuracy $\alpha$:
+| Task | Case | Alpha | Quick | Accurate | Quick Correct / 500 | Accurate Correct / 500 | Dual Correct / 500 | Quick Detection (s) | Accurate Detection (s) | Dual Detection (s) |
+|---|---:|---:|---|---|---:|---:|---:|---:|---:|---:|
+| Sidewalk | 1 | 0.835 | SL5/HL1 | SL10/HL1 | 380.9 | 426.2 | 441.8 | 1.120 | 1.540 | 0.570 |
+| Sidewalk | 2 | 0.875 | SL5/HL1 | SL20/HL1 | 380.9 | 440.2 | 465.3 | 1.120 | 3.090 | 0.570 |
+| Speeding | 1 | 0.823 | SL5/HL1 | SL10/HL2 | 454.4 | 460.7 | 455.8 | 0.495 | 2.221 | 0.495 |
+| Speeding | 2 | 0.846 | SL5/HL1 | SL20/HL2 | 454.4 | 455.6 | 443.1 | 0.495 | 4.090 | 0.516 |
 
-| Case # | $\tau$ (s) | Target $\alpha$ | Quick Model | Accurate Model | Quick Correct / 500 | Accurate Correct / 500 | **Dual Correct / 500** | Quick $T_{\text{det}}$ | Accurate $T_{\text{det}}$ | **Dual $T_{\text{det}}$** | Dual FP / FN |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| **1** | 1.0 s | 0.835 | SL5 / HL1 | SL10 / HL1 | 381.9 | 426.2 | **442.2** | 1.12 s | 1.54 s | **0.57 s** | 6.2 / 51.6 |
-| **2** | 1.0 s | 0.875 | SL5 / HL1 | SL20 / HL2 | 381.9 | 449.9 | **469.2** | 1.12 s | 2.70 s | **0.57 s** | 12.7 / 18.1 |
-| **3** | 1.0 s | 0.904 | SL5 / HL1 | SL20 / HL2 | 381.9 | 449.9 | **469.2** | 1.12 s | 2.70 s | **0.57 s** | 12.7 / 18.1 |
-| **4** | 1.5 s | 0.835 | SL5 / HL1 | SL10 / HL1 | 381.9 | 426.2 | **442.2** | 1.12 s | 1.54 s | **0.57 s** | 6.2 / 51.6 |
-| **5** | 1.5 s | 0.875 | SL5 / HL1 | SL20 / HL2 | 381.9 | 449.9 | **469.2** | 1.12 s | 2.70 s | **0.57 s** | 12.7 / 18.1 |
-| **6** | 1.5 s | 0.904 | SL5 / HL1 | SL20 / HL2 | 381.9 | 449.9 | **469.2** | 1.12 s | 2.70 s | **0.57 s** | 12.7 / 18.1 |
-| **7** | 2.0 s | 0.835 | SL5 / HL1 | SL10 / HL1 | 381.9 | 426.2 | **442.2** | 1.12 s | 1.54 s | **0.57 s** | 6.2 / 51.6 |
-| **8** | 2.0 s | 0.875 | SL5 / HL1 | SL20 / HL2 | 381.9 | 449.9 | **469.2** | 1.12 s | 2.70 s | **0.57 s** | 12.7 / 18.1 |
-| **9** | 2.0 s | 0.904 | SL5 / HL1 | SL20 / HL2 | 381.9 | 449.9 | **469.2** | 1.12 s | 2.70 s | **0.57 s** | 12.7 / 18.1 |
+These case configurations repeat across $\tau \in \{1.0,1.5,2.0\}$ s in the recorded outputs. Dual mode improves slot correctness over both static models in the sidewalk cases shown. It does **not** do so in the speeding cases; the result demonstrates a latency/accuracy tradeoff rather than a universal improvement. The full nine-case outputs are `results/dualmode_sidewalk_torch.csv` and `results/dualmode_speeding_torch.csv`.
 
-**Key Finding:** In Case #2, Dual-Mode achieves **469.2 correct slots** (93.8% slot accuracy), exceeding Quick alone (381.9) and Accurate alone (449.9), while cutting detection time to **0.57 seconds** (compared to 2.70 seconds for the Accurate model).
-
----
-
-
-
-### 13.1 Additional Experiment: Class-Imbalance Robustness
+### 13.4 Class-Imbalance Robustness
 
 The updated implementation includes `imbalance.py`, which varies the positive/illegal-window prevalence (default settings: 50%, 5%, and 1%) and compares unweighted training with class-balanced weighting. The script supports both speeding and sidewalk tasks and can repeat runs over multiple random seeds. It writes row-level results and summary statistics to `results/imbalance_*.csv` and generates corresponding plots.
 
@@ -264,7 +239,7 @@ The primary metrics are precision, recall, F1-score, false-positive rate, balanc
 
 For reproducibility, report the exact task, backend, sequence length, hidden-layer setting, prevalence values, weighting options, random seeds, and CSV filename. Do not combine results from different runs without identifying the configuration.
 
-### 13.2 Additional Experiment: Temporal Smoothing
+### 13.5 Temporal Smoothing
 
 The updated implementation includes `smoothing.py`, which applies majority voting over consecutive prediction slots. The default comparison includes window sizes `N = 1, 3, 5, 7, 9, 11`; `N=1` is the no-smoothing baseline. The experiment evaluates quick, accurate, and dual-mode prediction streams.
 
@@ -272,7 +247,7 @@ Temporal smoothing may reduce isolated false alarms, but it can also increase de
 
 Outputs are saved in `results/smoothing_*.csv` and corresponding figures. The precise backend and model files must be recorded when reporting results.
 
-### 13.3 Interpretation and Scope of the Added Experiments
+### 13.6 Interpretation and Scope of the Added Experiments
 
 These additions evaluate robustness and post-processing behavior on the project's synthetic trips and simulated scenarios. They do not add GPS-based detection or real-scooter validation. Any reported improvement is conditional on the simulator, split construction, model configuration, and evaluation protocol; it should not be presented as evidence of equivalent real-world performance without independent field data.
 
@@ -280,31 +255,31 @@ These additions evaluate robustness and post-processing behavior on the project'
 
 | Aspect | Original Paper Reported Result (Kim et al., ACM TECS 2025) | Our Simulation-Based Re-Implementation Result | Technical Assessment / Explanation |
 |---|---|---|---|
-| **Speeding Voltage Drop** | ~9.5% drop at $\ge 20$ km/h vs $< 20$ km/h | 2.72% overall drop (2.82% SoC-controlled drop) | In simulation, SoC is uniformly distributed across all speeds; in empirical tests, high-speed runs suffer progressive SoC drain and higher real-world internal resistance ($R \approx 0.35\ \Omega$). |
-| **Sidewalk $\Delta V$ Jitter** | Substantial variance increase on paving blocks | **2.33x** variance increase over bicycle road | **Replicated:** Segmented paving blocks produce distinct high-frequency load vibrations. |
-| **Sidewalk Detection Accuracy** | 83.95% (SL5) to 99.77% (SL30) | 78.80% (SL5) to **87.83%** (SL20) | Follows the exact scaling curve; difference in maximum accuracy stems from synthetic noise characteristics versus real GPS-filtered dataset. |
-| **Speeding Detection Accuracy** | 92.17% (SL5) to 94.84% (SL30) | 79.00% (SL5) to **83.43%** (SL20) | Consistent upward trend with window length. Lower absolute score reflects realistic continuous speed transitions across the 20 km/h boundary. |
-| **CNN vs. GRU** | 1D CNN superior to GRU in accuracy and embedded efficiency | 1D CNN outperforms GRU by +2.0% to +3.5% across all sequence lengths | **Replicated:** Conv1D residual blocks extract local temporal patterns more effectively than recurrent gates. |
-| **Dual-Mode Advantage** | Retains quick detection latency while matching accurate slot accuracy | Dual mode achieves **0.57 s** detection time and **469.2 / 500** correct slots | **Replicated:** Streaming state machine outperforms both static models. |
-| **Execution Platform** | Arduino Nano 33 BLE (9.3 ms - 605 ms), Jetson Nano (0.1 ms) | Laptop CPU via PyTorch / Sklearn (0.8 ms - 4.2 ms) | Laptop CPU executes matrix kernels faster than microcontrollers; trends match proportionally. |
+| **Speeding Voltage Drop** | ~9.5% drop at $\ge 20$ km/h vs $< 20$ km/h | 2.72% overall drop (2.82% capacity-quintile mean) | The simulator and paper use different data and conditions; the observed gap is not assigned to a single cause here. |
+| **Sidewalk $\Delta V$ Jitter** | Substantial variance increase on paving blocks | **2.33x** standard-deviation ratio over simulated road | The simulated surfaces show a larger voltage-difference spread; this is not an independent field replication. |
+| **Sidewalk Detection Accuracy** | 83.95% (SL5) to 99.77% (SL30) | Recorded PyTorch CNN: 78.77% (SL5) to 88.00% (SL20) | Lower accuracy on this synthetic test split; paper and simulator datasets are not directly comparable. |
+| **Speeding Detection Accuracy** | 92.17% (SL5) to 94.84% (SL30) | Recorded PyTorch CNN: 79.00% (SL5) to 83.53% (SL20) | Lower accuracy on this synthetic test split; the generator's speed targets include a 19–21.5 km/h gap. |
+| **CNN vs. GRU** | Paper compares model accuracy and embedded efficiency | At L20/HL2, CNN exceeds GRU by 0.86 percentage points for speeding and 3.67 points for sidewalk in the recorded run | A result from these configurations only; not a universal architecture ranking. |
+| **Dual-Mode Behavior** | Quick response with accurate confirmation | Sidewalk case 2: 465.3/500 slots at 0.57 s; speeding case 2: 443.1/500 at 0.516 s | Outcomes vary by task and model selection; dual mode is not consistently more accurate than either fixed model. |
+| **Execution Platform** | Arduino Nano 33 BLE and Jetson Nano | Local inference timings are recorded in generated CSVs; hardware details are not part of those files | Do not compare these timings directly to embedded-platform measurements. |
 
 ---
 
 ## 15. Limitations and Threats to Validity
 
 1. **Synthetic Telemetry vs. Real-World Field Data:** The original empirical driving dataset is unavailable. While our simulator models rolling resistance, aerodynamic drag, motor efficiency, and paving block vibration, synthetic noise cannot fully replicate environmental extremes such as tire pressure variations, puddles, gravel, and extreme ambient temperatures.
-2. **Controlled SoC Uniformity:** Because synthetic trips draw initial SoC uniformly, the battery voltage drop is dominated by instantaneous ohmic impedance rather than long-term SoC sag.
-3. **Hardware Execution Differences:** Latencies reported herein were benchmarked on standard x86 CPU hardware rather than ARM Cortex-M4 microcontrollers (Arduino Nano 33 BLE).
+2. **Simulator and SoC:** The simulator samples an initial charge level per trip and evolves capacity over time. Speed, charge, and voltage can therefore be correlated within trips; the observed voltage difference should not be attributed to one factor without a controlled analysis.
+3. **Hardware Execution Differences:** Recorded inference timings are host-specific and are not benchmarks on the paper's embedded platforms.
 4. **Boundary Speed Ambiguity:** At speeds hovering near 19.8–20.2 km/h, slight rider throttle adjustments cause binary label transitions that degrade instantaneous precision.
 
 ---
 
 ## 16. Conclusion and Future Work
 
-This project delivered an independent, verifiable academic re-implementation of the SecureRide e-scooter safety behavior detection system. By auditing the physics simulator, resolving the speed-bin gap, implementing ResNet-1D with channel attention, GRU, and Scikit-learn models in PyTorch and Python, and validating the streaming dual-mode state machine, we confirmed the core scientific premise of the paper: **internal battery telemetry provides a reliable, unforgeable physical side-channel for detecting speeding and sidewalk riding.**
+This repository contains a simulation-based implementation of battery-telemetry classification, model training, sample inference, and Quick/Accurate evaluation. Its results show that these models can classify labels generated by this simulator at measurable accuracy, but do not establish reliable real-world performance, resistance to tampering, or equivalence to the original paper's field results.
 
 ### Future Work
-1. **Onboard MCU Porting:** Quantizing the PyTorch 1D ResNet models into 8-bit integer TensorFlow Lite (TFLite) or ONNX format and flashing onto an Arduino Nano 33 BLE Sense board.
+1. **Onboard MCU Porting:** Benchmarking and, if appropriate, quantizing a model for an embedded platform; this repository does not currently provide a validated embedded deployment.
 2. **Empirical Road Traces:** Collecting driving traces from physical scooters across asphalt, interlocking pavers, tactile blocks, and brick pathways to fine-tune network weights.
 3. **Multi-Task Neural Network:** Designing a unified dual-headed backbone capable of predicting speeding and sidewalk riding simultaneously within a single forward pass.
 
