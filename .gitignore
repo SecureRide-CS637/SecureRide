@@ -16,3 +16,4 @@ __pycache__/
 
 # Training and experiment outputs
 /results/*
+/*.csv
